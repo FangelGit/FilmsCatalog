@@ -3,6 +3,7 @@ from django.shortcuts import render
 from rest_framework.viewsets import ModelViewSet
 
 from catalog.models import User, Country, Director, Film
+from catalog.permissions import IsAdminOrReadOnly
 from catalog.serializers import UserSerializer, CountrySerializer, DirectorSerializer, FilmSerializer
 
 
@@ -19,6 +20,7 @@ class DirectorViewSet(ModelViewSet):
 
 
 class CountryViewSet(ModelViewSet):
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
 
