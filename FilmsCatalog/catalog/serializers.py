@@ -1,15 +1,43 @@
+from django.contrib.auth import authenticate
+from rest_framework import serializers
+
 from catalog.models import DEFAULT_PASSWORD, User
 
 from drf_writable_nested import UniqueFieldsMixin, WritableNestedModelSerializer
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, Serializer
 
 from catalog.models import Film, Country, Director
+
+
+class UserTypeSerializer(Serializer):
+    def show_type(self, attrs):
+        attrs['type'] = self.data.user_type
+        return attrs
+
+
+class LoginSerializer(Serializer):
+    username = serializers.CharField(label="Username", write_only=True)
+    password = serializers.CharField(label="Password", write_only=True, trim_whitespace=False)
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        password = attrs.get('password')
+        if username and password:
+            user = authenticate(username=username, password=password)
+            if not user:
+                msg = 'Access denied: wrong username or password.'
+                raise serializers.ValidationError(msg)
+        else:
+            msg = 'Both fields are required.'
+            raise serializers.ValidationError(msg)
+        attrs['user'] = user
+        return attrs
 
 
 class UserSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'user_type')
+        fields = ('id', 'username', 'first_name', 'last_name', 'user_type')
 
     def create(self, validated_data):
         raw_password = DEFAULT_PASSWORD
@@ -61,4 +89,3 @@ class FilmSerializer(WritableNestedModelSerializer):
     class Meta:
         model = Film
         fields = ('title', 'description', 'countries', 'director')
-

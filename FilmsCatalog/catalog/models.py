@@ -1,13 +1,8 @@
 from django.contrib.auth.models import AbstractUser
-from django.db import models
-
-
-
 
 from django.db import models
+
 DEFAULT_PASSWORD = 'password'
-
-
 
 
 def validate_birth_date(value):
@@ -35,6 +30,7 @@ class User(AbstractUser):
     def __str__(self):
         return f'{self.username}'
 
+
 class Director(models.Model):
     first_name = models.CharField(max_length=50, default='')
     last_name = models.CharField(max_length=50, default='')
@@ -55,7 +51,6 @@ class Country(models.Model):
 
 
 class Film(models.Model):
-
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=200)
     director = models.ForeignKey(Director, on_delete=models.PROTECT)

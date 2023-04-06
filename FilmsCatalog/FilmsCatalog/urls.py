@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from catalog.views import DirectorViewSet, CountryViewSet, FilmViewSet, UserViewSet
+from catalog.views import DirectorViewSet, CountryViewSet, FilmViewSet, UserViewSet, LoginView
 
 router = SimpleRouter()
 
@@ -30,6 +30,7 @@ router.register(r'api/film', FilmViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('login/', LoginView.as_view())
 ]
 
 urlpatterns += router.urls
