@@ -1,10 +1,30 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from FilmsCatalog.settings import TYPE_CHOICES
 
 
-# Create your models here.
+
+from django.db import models
+DEFAULT_PASSWORD = 'password'
+
+
+
+
+def validate_birth_date(value):
+    from datetime import datetime
+    from rest_framework.exceptions import ValidationError
+
+    if value <= datetime.now().date():
+        return value
+    else:
+        raise ValidationError("Date is not passed")
+
+
+TYPE_CHOICES = (
+    (0, 'user'),
+    (1, 'superuser'),
+    (2, 'owner'),
+)
 
 
 class User(AbstractUser):
@@ -15,11 +35,10 @@ class User(AbstractUser):
     def __str__(self):
         return f'{self.username}'
 
-
 class Director(models.Model):
     first_name = models.CharField(max_length=50, default='')
     last_name = models.CharField(max_length=50, default='')
-    birth_date = models.DateField(null=True)
+    birth_date = models.DateField(null=True, validators=[validate_birth_date])
 
     def get_full_name(self):
         return f'{self.first_name} {self.last_name}'
@@ -36,6 +55,7 @@ class Country(models.Model):
 
 
 class Film(models.Model):
+
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=200)
     director = models.ForeignKey(Director, on_delete=models.PROTECT)

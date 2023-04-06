@@ -1,6 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
-from FilmsCatalog.settings import TYPE_CHOICES
+from catalog.models import TYPE_CHOICES
 
 
 class ReadOnly(BasePermission):

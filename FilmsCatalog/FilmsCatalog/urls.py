@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
-from catalog.views import UserViewSet, DirectorViewSet, CountryViewSet, FilmViewSet
+from catalog.views import DirectorViewSet, CountryViewSet, FilmViewSet, UserViewSet
 
 router = SimpleRouter()
 
