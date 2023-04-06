@@ -1,9 +1,25 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
+from FilmsCatalog.settings import TYPE_CHOICES
 
-class IsAdminOrReadOnly(BasePermission):
+
+class ReadOnly(BasePermission):
     def has_permission(self, request, view):
         return bool(
-            request.method in SAFE_METHODS or
-            (request.user and request.user.is_staff)
+            request.method in SAFE_METHODS
+            and request.user
         )
+
+
+class IsOwner(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            return bool(request.user.user_type == TYPE_CHOICES[2][0])
+        return False
+
+
+class IsSuperUser(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            return bool(request.user.user_type == TYPE_CHOICES[1][0])
+        return False

@@ -94,6 +94,12 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'catalog.User'
 
+TYPE_CHOICES = (
+        (0, 'user'),
+        (1, 'superuser'),
+        (2, 'owner'),
+    )
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',

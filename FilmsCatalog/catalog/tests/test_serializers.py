@@ -14,6 +14,7 @@ class UserSerializerTestCase(TestCase):
             'username': 'user1',
             'first_name': '',
             'last_name': '',
+            'user_type': 0
         }
         serialized_data = UserSerializer(self.user1).data
         self.assertEqual(expected_data, serialized_data)
@@ -21,13 +22,13 @@ class UserSerializerTestCase(TestCase):
 
 class DirectorSerializerTestCase(TestCase):
     def setUp(self):
-        self.user1 = catalog.models.User.objects.create(username='user1')
-        self.director1 = Director.objects.create(user=self.user1, first_name='David', last_name='Lynch')
+        self.director1 = Director.objects.create(first_name='David', last_name='Lynch')
 
     def test_ok(self):
         expected_data = {
             'first_name': 'David',
             'last_name': 'Lynch',
+            'birth_date': None,
         }
         serialized_data = DirectorSerializer(self.director1).data
         self.assertEqual(expected_data, serialized_data)
@@ -47,8 +48,7 @@ class CountrySerializerTestCase(TestCase):
 
 class FilmTestCase(TestCase):
     def setUp(self):
-        self.user1 = catalog.models.User.objects.create(username='user1')
-        self.director1 = Director.objects.create(user=self.user1, first_name='David', last_name='Lynch')
+        self.director1 = Director.objects.create( first_name='David', last_name='Lynch')
         self.country1 = Country.objects.create(name='Poland')
         self.film = Film.objects.create(title='Film 1', description='Description 1', director=self.director1)
         self.film.countries.add(self.country1)
@@ -64,7 +64,8 @@ class FilmTestCase(TestCase):
             ],
             "director": {
                 "first_name": "David",
-                "last_name": "Lynch"
+                "last_name": "Lynch",
+                'birth_date': None,
             }
         }
         serialized_data = FilmSerializer(self.film).data

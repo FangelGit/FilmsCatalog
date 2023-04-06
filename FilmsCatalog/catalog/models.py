@@ -1,6 +1,7 @@
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
+from FilmsCatalog.settings import TYPE_CHOICES
 
 
 # Create your models here.
@@ -9,15 +10,16 @@ from django.db import models
 class User(AbstractUser):
     first_name = models.CharField(max_length=50, blank=True)
     last_name = models.CharField(max_length=50, blank=True)
+    user_type = models.PositiveIntegerField(choices=TYPE_CHOICES, default=0)
 
     def __str__(self):
         return f'{self.username}'
 
 
 class Director(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     first_name = models.CharField(max_length=50, default='')
     last_name = models.CharField(max_length=50, default='')
+    birth_date = models.DateField(null=True)
 
     def get_full_name(self):
         return f'{self.first_name} {self.last_name}'
@@ -27,7 +29,7 @@ class Director(models.Model):
 
 
 class Country(models.Model):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50, unique=True)
 
     def __str__(self):
         return self.name
