@@ -1,5 +1,4 @@
 from django.test import TestCase
-
 import catalog
 from catalog.models import Director, Country, Film
 

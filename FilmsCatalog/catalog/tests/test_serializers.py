@@ -1,5 +1,4 @@
 from django.test import TestCase
-
 import catalog
 from catalog.models import Director, Country, Film
 from catalog.serializers import UserSerializer, DirectorSerializer, CountrySerializer, FilmSerializer
@@ -11,6 +10,7 @@ class UserSerializerTestCase(TestCase):
 
     def test_ok(self):
         expected_data = {
+            'id': self.user1.pk,
             'username': 'user1',
             'first_name': '',
             'last_name': '',
@@ -26,6 +26,7 @@ class DirectorSerializerTestCase(TestCase):
 
     def test_ok(self):
         expected_data = {
+            'id': self.director1.pk,
             'first_name': 'David',
             'last_name': 'Lynch',
             'birth_date': None,
@@ -40,6 +41,7 @@ class CountrySerializerTestCase(TestCase):
 
     def test_ok(self):
         expected_data = {
+            'id': self.country.pk,
             'name': 'Poland',
         }
         serialized_data = CountrySerializer(self.country).data
@@ -58,15 +60,9 @@ class FilmTestCase(TestCase):
             "title": "Film 1",
             "description": "Description 1",
             "countries": [
-                {
-                    "name": "Poland"
-                },
+                CountrySerializer(self.country1).data
             ],
-            "director": {
-                "first_name": "David",
-                "last_name": "Lynch",
-                'birth_date': None,
-            }
+            "director": DirectorSerializer(self.director1).data
         }
         serialized_data = FilmSerializer(self.film).data
         self.assertEqual(expected_data, serialized_data)

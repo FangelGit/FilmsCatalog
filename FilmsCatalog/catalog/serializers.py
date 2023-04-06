@@ -1,18 +1,9 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-
 from catalog.models import DEFAULT_PASSWORD, User
-
 from drf_writable_nested import UniqueFieldsMixin, WritableNestedModelSerializer
 from rest_framework.serializers import ModelSerializer, Serializer
-
 from catalog.models import Film, Country, Director
-
-
-class UserTypeSerializer(Serializer):
-    def show_type(self, attrs):
-        attrs['type'] = self.data.user_type
-        return attrs
 
 
 class LoginSerializer(Serializer):
@@ -77,8 +68,8 @@ class DirectorSerializer(ModelSerializer):
 
     def create(self, validated_data):
         obj, is_new = Director.objects.get_or_create(first_name=validated_data['first_name'],
-                                                     last_name=validated_data['last_name'],
-                                                     birth_date=validated_data['birth_date'])
+                                                     last_name=validated_data['last_name']
+                                                     )
         return obj
 
 

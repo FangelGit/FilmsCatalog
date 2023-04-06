@@ -1,8 +1,7 @@
 from django.contrib.auth.models import AbstractUser
-
 from django.db import models
 
-DEFAULT_PASSWORD = 'password'
+DEFAULT_PASSWORD = 'JMu9f27rNV'
 
 
 def validate_birth_date(value):

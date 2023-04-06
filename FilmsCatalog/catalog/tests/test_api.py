@@ -1,13 +1,9 @@
 import json
-
-from django.core import serializers
 from django.db.models import ProtectedError
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
-
-import catalog
-from catalog.models import User, Director, Country, Film
+from catalog.models import User, Director, Country, Film, DEFAULT_PASSWORD
 from catalog.serializers import CountrySerializer, DirectorSerializer, UserSerializer, FilmSerializer
 
 
@@ -31,9 +27,11 @@ class CountryApiTestCase(TestCase):
 
     def test_get_superuser(self):
         url = reverse('country-list')
+        expected_data = CountrySerializer(self.countries, many=True).data
         self.client.force_login(self.superuser)
         response = self.client.get(url)
-        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(expected_data, response.data)
 
     def test_get_owner(self):
         url = reverse('country-list')
@@ -63,8 +61,8 @@ class CountryApiTestCase(TestCase):
         self.client.force_login(self.superuser)
         self.assertEqual(1, Country.objects.all().count())
         response = self.client.post(url, data=json_data, content_type='application/json')
-        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
-        self.assertEqual(1, Country.objects.all().count())
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(2, Country.objects.all().count())
 
     def test_post_owner(self):
         data = {
@@ -95,10 +93,17 @@ class CountryApiTestCase(TestCase):
         url = reverse('country-detail', args=(self.countries[0].id,))
         self.client.force_login(self.superuser)
         response = self.client.put(url, data=json_data, content_type='application/json')
-        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        response = self.client.get(url)
+        expected_data = {
+            'id': self.countries[0].pk,
+            'name': 'USA'
+        }
+        self.assertEqual(expected_data, response.data)
 
     def test_put_owner(self):
         data = {
+            'id': self.countries[0].pk,
             'name': 'USA',
         }
         json_data = json.dumps(data)
@@ -121,8 +126,8 @@ class CountryApiTestCase(TestCase):
         self.client.force_login(self.superuser)
         url = reverse('country-detail', args=(self.countries[0].id,))
         response = self.client.delete(url, data=self.countries[0].id, content_type='application/json')
-        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
-        self.assertEqual(1, Country.objects.all().count())
+        self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
+        self.assertEqual(0, Country.objects.all().count())
 
     def test_delete_owner(self):
         self.assertEqual(1, Country.objects.all().count())
@@ -192,7 +197,6 @@ class DirectorApiTestCase(TestCase):
         self.assertEqual(1, Director.objects.all().count())
 
         response = self.client.post(url, data=json_data, content_type='application/json')
-        print(data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(2, Director.objects.all().count())
 
@@ -221,6 +225,7 @@ class DirectorApiTestCase(TestCase):
 
     def test_put_superuser(self):
         data = {
+            'id': self.directors[0].pk,
             'first_name': 'director',
             'last_name': '1',
             'birth_date': None,
@@ -235,6 +240,7 @@ class DirectorApiTestCase(TestCase):
 
     def test_put_owner(self):
         data = {
+            'id': self.directors[0].pk,
             'first_name': 'director',
             'last_name': '1',
             'birth_date': None,
@@ -364,6 +370,7 @@ class UserApiTestCase(TestCase):
 
     def test_put_owner(self):
         data = {
+            'id': self.users[0].pk,
             'username': 'quest',
             'first_name': '',
             'last_name': '',
@@ -466,13 +473,11 @@ class FilmApiTestCase(TestCase):
             'title': 'director',
             'description': '1',
             'countries': [
-                {'name': 'Country1'},
-                {'name': 'Country2'},
+                CountrySerializer(Country.objects.create(name='Country1')).data,
+                CountrySerializer(Country.objects.create(name='Country2')).data
             ],
-            'director': {
-                'first_name': 'First',
-                'last_name': 'Second',
-            }
+            'director': DirectorSerializer(Director.objects.create(first_name='First', last_name='Second')).data
+
         }
         json_data = json.dumps(data)
         self.client.force_login(self.superuser)
@@ -506,8 +511,8 @@ class FilmApiTestCase(TestCase):
     def test_put(self):
         data = {
             'countries': [
-                {'name': 'Country1'},
-                {'name': 'Country2'},
+                CountrySerializer(Country.objects.create(name='Country1')).data,
+                CountrySerializer(Country.objects.create(name='Country2')).data
             ],
         }
         json_data = json.dumps(data)
@@ -515,77 +520,114 @@ class FilmApiTestCase(TestCase):
         response = self.client.put(url, data=json_data, content_type='application/json')
         self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
 
-    # def test_put_superuser(self):
-    #     data = {
-    #         'title': 'New film',
-    #         'description': '1',
-    #         'countries': [
-    #             {'name': 'Country1'},
-    #             {'name': 'Country2'},
-    #         ],
-    #         'director': {
-    #             'first_name': 'First',
-    #             'last_name': 'Second',
-    #         }
-    #     }
-    #     json_data = json.dumps(data)
-    #     url = reverse('film-detail', args=(self.films[0].id,))
-    #     self.client.force_login(self.superuser)
-    #     response = self.client.put(url, data=json_data, content_type='application/json')
-    #     self.assertEqual(status.HTTP_200_OK, response.status_code)
-    #     response = self.client.get(url)
-    #     print(f'Expected: {data}\nResponsed: {response.data}')
-    #     self.assertEqual(data, response.data)
+    def test_put_superuser(self):
+        data = {
+            'title': 'New film',
+            'description': '1',
+            'countries': [
+                CountrySerializer(Country.objects.create(name='Country1')).data,
+                CountrySerializer(Country.objects.create(name='Country2')).data
+            ],
+            'director': DirectorSerializer(Director.objects.create(first_name='First', last_name='Second')).data
+        }
+        json_data = json.dumps(data)
+        url = reverse('film-detail', args=(self.films[0].id,))
+        self.client.force_login(self.superuser)
+        response = self.client.put(url, data=json_data, content_type='application/json')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        response = self.client.get(url)
+        self.assertEqual(data, response.data)
 
-    # def test_patch_superuser(self):
-    #     data = {
-    #         'title': 'New film',
-    #         'description': '1',
-    #         'director': {
-    #             'first_name': 'First',
-    #             'last_name': 'Second',
-    #         }
-    #     }
-    #     json_data = json.dumps(data)
-    #     url = reverse('film-detail', args=(self.films[0].id,))
-    #     self.client.force_login(self.superuser)
-    #     response = self.client.patch(url, data=json_data, content_type='application/json')
-    #     self.assertEqual(status.HTTP_200_OK, response.status_code)
-    #     response = self.client.get(url)
-    #     print(f'Expected: {data}\nResponsed: {response.data}')
-    #     self.assertEqual(data, response.data)
+    def test_put_owner(self):
+        data = {
+            'title': 'New film',
+            'description': '1',
+            'countries': [
+                CountrySerializer(Country.objects.create(name='Country1')).data,
+                CountrySerializer(Country.objects.create(name='Country2')).data
+            ],
+            'director': DirectorSerializer(Director.objects.create(first_name='First', last_name='Second')).data
+        }
+        json_data = json.dumps(data)
+        url = reverse('film-detail', args=(self.films[0].id,))
+        self.client.force_login(self.owner)
+        response = self.client.put(url, data=json_data, content_type='application/json')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        response = self.client.get(url)
+        self.assertEqual(data, response.data)
 
-    # def test_put_owner(self):
-    #     data = {
-    #         'first_name': 'director',
-    #         'last_name': '1',
-    #         'birth_date': None,
-    #     }
-    #     json_data = json.dumps(data)
-    #     url = reverse('director-detail', args=(self.directors[0].id,))
-    #     self.client.force_login(self.owner)
-    #     response = self.client.put(url, data=json_data, content_type='application/json')
-    #     self.assertEqual(status.HTTP_200_OK, response.status_code)
-    #     response = self.client.get(url)
-    #     self.assertEqual(data, response.data)
-    #
-    # def test_delete(self):
-    #     self.assertEqual(1, Director.objects.all().count())
-    #     url = reverse('director-detail', args=(self.directors[0].id,))
-    #     response = self.client.delete(url, data=self.directors[0].id, content_type='application/json')
-    #     self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
-    #     self.assertEqual(1, Director.objects.all().count())
-    #
-    # def test_delete_superuser(self):
-    #     self.assertEqual(1, Director.objects.all().count())
-    #     url = reverse('director-detail', args=(self.directors[0].id,))
-    #     self.client.force_login(self.superuser)
-    #     with self.assertRaises(ProtectedError):
-    #         self.client.delete(url, data=self.directors[0].id, content_type='application/json')
-    #
-    # def test_delete_owner(self):
-    #     self.assertEqual(1, Director.objects.all().count())
-    #     url = reverse('director-detail', args=(self.directors[0].id,))
-    #     self.client.force_login(self.owner)
-    #     with self.assertRaises(ProtectedError):
-    #         self.client.delete(url, data=self.directors[0].id, content_type='application/json')
+    def test_patch_superuser(self):
+        data = {
+            'title': 'New film',
+            'description': '1',
+            'director': DirectorSerializer(Director.objects.create(first_name='First', last_name='Second')).data
+        }
+        json_data = json.dumps(data)
+        url = reverse('film-detail', args=(self.films[0].id,))
+        self.client.force_login(self.superuser)
+        response = self.client.patch(url, data=json_data, content_type='application/json')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        response = self.client.get(url)
+        expected_data = FilmSerializer(self.films[0]).data
+        self.assertEqual(expected_data, response.data)
+
+    def test_delete(self):
+        self.assertEqual(1, Director.objects.all().count())
+        url = reverse('director-detail', args=(self.directors[0].id,))
+        response = self.client.delete(url, data=self.directors[0].id, content_type='application/json')
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+        self.assertEqual(1, Director.objects.all().count())
+
+    def test_delete_superuser(self):
+        self.assertEqual(1, Director.objects.all().count())
+        url = reverse('director-detail', args=(self.directors[0].id,))
+        self.client.force_login(self.superuser)
+        with self.assertRaises(ProtectedError):
+            self.client.delete(url, data=self.directors[0].id, content_type='application/json')
+
+    def test_delete_owner(self):
+        self.assertEqual(1, Director.objects.all().count())
+        url = reverse('director-detail', args=(self.directors[0].id,))
+        self.client.force_login(self.owner)
+        with self.assertRaises(ProtectedError):
+            self.client.delete(url, data=self.directors[0].id, content_type='application/json')
+
+
+class LoginApiTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create(username='user')
+        self.superuser = User.objects.create(username='superuser', user_type=1)
+        self.owner = User.objects.create(username='owner', user_type=2)
+        self.url = 'http://127.0.0.1:8000/login/'
+        self.not_logged_msg = 'Not logged in'
+        self.username = 'username'
+        self.password = DEFAULT_PASSWORD
+        self.bad_password = 'password'
+        self.user_with_pass = User.objects.create(username=self.username, password=self.password)
+
+    def test_get(self):
+        response = self.client.get(self.url)
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+        self.assertEqual(self.not_logged_msg, response.data)
+
+    def test_get_user(self):
+        self.client.force_login(user=self.user)
+        response = self.client.get(self.url)
+        expected_data = 'user'
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(expected_data, response.data)
+
+    def test_get_superuser(self):
+        self.client.force_login(user=self.superuser)
+        response = self.client.get(self.url)
+        expected_data = 'superuser'
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(expected_data, response.data)
+
+    def test_get_owner(self):
+        self.client.force_login(user=self.owner)
+        response = self.client.get(self.url)
+        expected_data = 'owner'
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(expected_data, response.data)
+
