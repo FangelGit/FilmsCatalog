@@ -53,7 +53,7 @@ class UserSerializer(ModelSerializer):
 class CountrySerializer(UniqueFieldsMixin, ModelSerializer):
     class Meta:
         model = Country
-        fields = ('id', 'name')
+        fields = ('name',)
 
     def create(self, validated_data):
         country = validated_data
@@ -64,7 +64,7 @@ class CountrySerializer(UniqueFieldsMixin, ModelSerializer):
 class DirectorSerializer(ModelSerializer):
     class Meta:
         model = Director
-        fields = ('id', 'first_name', 'last_name', 'birth_date')
+        fields = ('first_name', 'last_name', 'birth_date')
 
     def create(self, validated_data):
         obj, is_new = Director.objects.get_or_create(first_name=validated_data['first_name'],
