@@ -30,3 +30,4 @@ A small project representing REST API using DRF
     Only Superuser can GET, POST, PUT, DELETE
     Default password for created user: JMu9f27rNV
 
+
